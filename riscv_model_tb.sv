@@ -26,7 +26,7 @@ module riscv_model_tb;
     `EXE(4020823b)
 
     $display("\n");
-    $display("%s", model.rf_x_to_string());
+    $display("%s", model.int_reg_to_string());
     $display("\n");
 
     $finish;

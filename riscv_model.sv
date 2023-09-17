@@ -1,4 +1,4 @@
-// ### Author : Foez Ahmed (foez.official@gmail.com), Md. Mohiuddin Reyad (mreyad30207@gmail.com)
+// ### Authors : Foez Ahmed (foez.official@gmail.com), Md. Mohiuddin Reyad (mreyad30207@gmail.com)
 
 // SUPPORTED INSTRUCTION SET
 // RV32I            RV32M            RV32Zifencei     RV32Zicsr
@@ -8,6 +8,10 @@
 class riscv_model #(
     parameter int XLEN = 64
 );
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  //-TYPEDEFS{{{
+  //////////////////////////////////////////////////////////////////////////////////////////////////
 
   typedef enum int {  //{{{
     INVALID_INSTRUCTION,
@@ -230,7 +234,29 @@ class riscv_model #(
     logic [11:0] csr;
   } decoded_inst_t;  //}}}
 
-  local bit [XLEN/8-1:0][7:0] rf_x[32];
+  //}}}
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  //-VARIABLES{{{
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  local bit [XLEN-1:0] pc;
+  local bit [7:0] mem[longint]; // TODO : MEM-IO
+  local bit [XLEN/8-1:0][7:0] int_reg[32];
+
+  //}}}
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  //-METHODS{{{
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  function automatic bit [XLEN-1:0] get_pc();  //{{{
+    return pc;
+  endfunction  //}}}
+
+  function automatic void set_pc(bit [XLEN-1:0] addr);  //{{{
+    pc = addr;
+  endfunction  //}}}
 
   function automatic bit [XLEN-1:0] sign_ext(bit [XLEN-1:0] data, int len);  //{{{
     sign_ext = data;
@@ -240,16 +266,16 @@ class riscv_model #(
   endfunction  //}}}
 
   function automatic bit [XLEN-1:0] read_int_reg(bit [4:0] reg_id);  //{{{
-    return rf_x[reg_id];
+    return int_reg[reg_id];
   endfunction  //}}}
 
   function automatic void write_int_reg(bit [4:0] reg_id, bit [XLEN-1:0] data);  //{{{
     if (reg_id != 0) begin
-      rf_x[reg_id] = data;
+      int_reg[reg_id] = data;
     end
   endfunction  //}}}
 
-  function automatic string rf_x_to_string();  //{{{
+  function automatic string int_reg_to_string();  //{{{
     string txt;
     $sformat(txt, "\033[0;33mINTEGER REG FILE[%0t]:\033[0m", $realtime);
     for (int i = 0; i < 8; i++) begin
@@ -763,14 +789,14 @@ class riscv_model #(
   // SLLIW      SLLW       SLT        SLTI       SLTIU      SLTU       SRA
   // SRAI       SRAIW      SRAW       SRL        SRLI       SRLIW      SRLW
   // SW         XOR        XORI
-  function automatic bit execute(bit [31:0] instr_word, bit debug = 0);  //{{{
+  function automatic bit execute(bit [31:0] instr_word, bit print = 0);  //{{{
 
     decoded_inst_t instr;
     instr = decode(instr_word);
 
-    if (debug) $display("0x%h : %p", instr_word, instr);
+    if (print) $display("0x%h : %p", instr_word, instr);
 
-    case (instr.func)  //{{{
+    case (instr.func)
 
       ADD: begin  //{{{
         write_int_reg(instr.rd, read_int_reg(instr.rs1) + read_int_reg(instr.rs2));
@@ -788,12 +814,720 @@ class riscv_model #(
         write_int_reg(instr.rd, sign_ext(read_int_reg(instr.rs1) + read_int_reg(instr.rs2), 31));
       end  //}}}
 
+      AMOADD_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      AMOADD_W: begin  //{{{
+        return '0;
+      end  //}}}
+
+      AMOAND_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      AMOAND_W: begin  //{{{
+        return '0;
+      end  //}}}
+
+      AMOMAX_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      AMOMAX_W: begin  //{{{
+        return '0;
+      end  //}}}
+
+      AMOMAXU_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      AMOMAXU_W: begin  //{{{
+        return '0;
+      end  //}}}
+
+      AMOMIN_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      AMOMIN_W: begin  //{{{
+        return '0;
+      end  //}}}
+
+      AMOMINU_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      AMOMINU_W: begin  //{{{
+        return '0;
+      end  //}}}
+
+      AMOOR_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      AMOOR_W: begin  //{{{
+        return '0;
+      end  //}}}
+
+      AMOSWAP_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      AMOSWAP_W: begin  //{{{
+        return '0;
+      end  //}}}
+
+      AMOXOR_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      AMOXOR_W: begin  //{{{
+        return '0;
+      end  //}}}
+
+      AND: begin  //{{{
+        return '0;
+      end  //}}}
+
+      ANDI: begin  //{{{
+        return '0;
+      end  //}}}
+
+      AUIPC: begin  //{{{
+        return '0;
+      end  //}}}
+
+      BEQ: begin  //{{{
+        return '0;
+      end  //}}}
+
+      BGE: begin  //{{{
+        return '0;
+      end  //}}}
+
+      BGEU: begin  //{{{
+        return '0;
+      end  //}}}
+
+      BLT: begin  //{{{
+        return '0;
+      end  //}}}
+
+      BLTU: begin  //{{{
+        return '0;
+      end  //}}}
+
+      BNE: begin  //{{{
+        return '0;
+      end  //}}}
+
+      CSRRC: begin  //{{{
+        return '0;
+      end  //}}}
+
+      CSRRCI: begin  //{{{
+        return '0;
+      end  //}}}
+
+      CSRRS: begin  //{{{
+        return '0;
+      end  //}}}
+
+      CSRRSI: begin  //{{{
+        return '0;
+      end  //}}}
+
+      CSRRW: begin  //{{{
+        return '0;
+      end  //}}}
+
+      CSRRWI: begin  //{{{
+        return '0;
+      end  //}}}
+
+      DIV: begin  //{{{
+        return '0;
+      end  //}}}
+
+      DIVU: begin  //{{{
+        return '0;
+      end  //}}}
+
+      DIVUW: begin  //{{{
+        return '0;
+      end  //}}}
+
+      DIVW: begin  //{{{
+        return '0;
+      end  //}}}
+
+      EBREAK: begin  //{{{
+        return '0;
+      end  //}}}
+
+      ECALL: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FADD_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FADD_Q: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FADD_S: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCLASS_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCLASS_Q: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCLASS_S: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCVT_D_L: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCVT_D_LU: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCVT_D_Q: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCVT_D_S: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCVT_D_W: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCVT_D_WU: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCVT_L_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCVT_L_Q: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCVT_L_S: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCVT_LU_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCVT_LU_Q: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCVT_LU_S: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCVT_Q_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCVT_Q_L: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCVT_Q_LU: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCVT_Q_S: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCVT_Q_W: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCVT_Q_WU: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCVT_S_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCVT_S_L: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCVT_S_LU: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCVT_S_Q: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCVT_S_W: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCVT_S_WU: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCVT_W_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCVT_W_Q: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCVT_W_S: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCVT_WU_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCVT_WU_Q: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FCVT_WU_S: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FDIV_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FDIV_Q: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FDIV_S: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FENCE_I: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FENCE: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FEQ_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FEQ_Q: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FEQ_S: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FLD: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FLE_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FLE_Q: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FLE_S: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FLQ: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FLT_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FLT_Q: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FLT_S: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FLW: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FMADD_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FMADD_Q: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FMADD_S: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FMAX_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FMAX_Q: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FMAX_S: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FMIN_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FMIN_Q: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FMIN_S: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FMSUB_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FMSUB_Q: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FMSUB_S: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FMUL_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FMUL_Q: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FMUL_S: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FMV_D_X: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FMV_W_X: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FMV_X_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FMV_X_W: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FNMADD_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FNMADD_Q: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FNMADD_S: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FNMSUB_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FNMSUB_Q: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FNMSUB_S: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FSD: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FSGNJ_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FSGNJ_Q: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FSGNJ_S: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FSGNJN_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FSGNJN_Q: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FSGNJN_S: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FSGNJX_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FSGNJX_Q: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FSGNJX_S: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FSQ: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FSQRT_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FSQRT_Q: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FSQRT_S: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FSUB_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FSUB_Q: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FSUB_S: begin  //{{{
+        return '0;
+      end  //}}}
+
+      FSW: begin  //{{{
+        return '0;
+      end  //}}}
+
+      JAL: begin  //{{{
+        return '0;
+      end  //}}}
+
+      JALR: begin  //{{{
+        return '0;
+      end  //}}}
+
+      LB: begin  //{{{
+        return '0;
+      end  //}}}
+
+      LBU: begin  //{{{
+        return '0;
+      end  //}}}
+
+      LD: begin  //{{{
+        return '0;
+      end  //}}}
+
+      LH: begin  //{{{
+        return '0;
+      end  //}}}
+
+      LHU: begin  //{{{
+        return '0;
+      end  //}}}
+
+      LR_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      LR_W: begin  //{{{
+        return '0;
+      end  //}}}
+
       LUI: begin  //{{{
         write_int_reg(instr.rd, (sign_ext(instr.imm, 20) << 12));
       end  //}}}
 
+      LW: begin  //{{{
+        return '0;
+      end  //}}}
+
+      LWU: begin  //{{{
+        return '0;
+      end  //}}}
+
+      MUL: begin  //{{{
+        return '0;
+      end  //}}}
+
+      MULH: begin  //{{{
+        return '0;
+      end  //}}}
+
+      MULHSU: begin  //{{{
+        return '0;
+      end  //}}}
+
+      MULHU: begin  //{{{
+        return '0;
+      end  //}}}
+
+      MULW: begin  //{{{
+        return '0;
+      end  //}}}
+
+      OR: begin  //{{{
+        return '0;
+      end  //}}}
+
+      ORI: begin  //{{{
+        return '0;
+      end  //}}}
+
+      REM: begin  //{{{
+        return '0;
+      end  //}}}
+
+      REMU: begin  //{{{
+        return '0;
+      end  //}}}
+
+      REMUW: begin  //{{{
+        return '0;
+      end  //}}}
+
+      REMW: begin  //{{{
+        return '0;
+      end  //}}}
+
+      SB: begin  //{{{
+        return '0;
+      end  //}}}
+
+      SC_D: begin  //{{{
+        return '0;
+      end  //}}}
+
+      SC_W: begin  //{{{
+        return '0;
+      end  //}}}
+
+      SD: begin  //{{{
+        return '0;
+      end  //}}}
+
+      SH: begin  //{{{
+        return '0;
+      end  //}}}
+
+      SLL: begin  //{{{
+        return '0;
+      end  //}}}
+
       SLLI: begin  //{{{
         write_int_reg(instr.rd, read_int_reg(instr.rs1) << instr.shamt);
+      end  //}}}
+
+      SLLIW: begin  //{{{
+        return '0;
+      end  //}}}
+
+      SLLW: begin  //{{{
+        return '0;
+      end  //}}}
+
+      SLT: begin  //{{{
+        return '0;
+      end  //}}}
+
+      SLTI: begin  //{{{
+        return '0;
+      end  //}}}
+
+      SLTIU: begin  //{{{
+        return '0;
+      end  //}}}
+
+      SLTU: begin  //{{{
+        return '0;
+      end  //}}}
+
+      SRA: begin  //{{{
+        return '0;
+      end  //}}}
+
+      SRAI: begin  //{{{
+        return '0;
+      end  //}}}
+
+      SRAIW: begin  //{{{
+        return '0;
+      end  //}}}
+
+      SRAW: begin  //{{{
+        return '0;
+      end  //}}}
+
+      SRL: begin  //{{{
+        return '0;
+      end  //}}}
+
+      SRLI: begin  //{{{
+        return '0;
+      end  //}}}
+
+      SRLIW: begin  //{{{
+        return '0;
+      end  //}}}
+
+      SRLW: begin  //{{{
+        return '0;
       end  //}}}
 
       SUB: begin  //{{{
@@ -804,16 +1538,33 @@ class riscv_model #(
         write_int_reg(instr.rd, sign_ext(read_int_reg(instr.rs1) - read_int_reg(instr.rs2), 31));
       end  //}}}
 
-      default: return 0;
+      SW: begin  //{{{
+        return '0;
+      end  //}}}
 
-    endcase  //}}}
+      XOR: begin  //{{{
+        return '0;
+      end  //}}}
+
+      XORI: begin  //{{{
+        return '0;
+      end  //}}}
+
+      default: return '0;
+
+    endcase
 
     return 1;
 
   endfunction  //}}}
 
+  //}}}
+
 endclass
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//-NOTES{{{
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /*
 
@@ -843,3 +1594,5 @@ endclass
 Table 24.3: RISC-V control and status register (CSR) address map.
 
 */
+
+//}}}
