@@ -1,15 +1,11 @@
 // ### Author : Foez Ahmed (foez.official@gmail.com), Md. Mohiuddin Reyad (mreyad30207@gmail.com)
 
+// SUPPORTED INSTRUCTION SET
+// RV32I            RV32M            RV32Zifencei     RV32Zicsr
+// RV64I            RV64M            RV64Zifencei     RV64Zicsr
+// RV32A            RV32F            RV32D            RV32Q
+// RV64A            RV64F            RV64D            RV64Q
 class riscv_model;
-
-  // RV64I
-  // RV64Zifencei
-  // RV64Zicsr
-  // RV64M
-  // RV64A
-  // RV64F
-  // RV64D
-  // RV64Q
 
   typedef enum int {  //{{{
     INVALID_INSTRUCTION,
@@ -232,6 +228,21 @@ class riscv_model;
     logic [11:0] csr;
   } decoded_inst_t;  //}}}
 
+  local bit [7:0][7:0] rf_x[32];
+
+  function automatic bit [63:0] read_int_reg(bit [4:0] reg_id);  //{{{
+    return rf_x[reg_id];
+  endfunction  //}}}
+
+  function automatic bit write_int_reg(bit [4:0] reg_id, bit [63:0] data);  //{{{
+    if (reg_id == 0) begin
+      return 0;
+    end else begin
+      rf_x[reg_id] = data;
+      return '1;
+    end
+  endfunction  //}}}
+
   function automatic decoded_inst_t decode(bit [31:0] instr);  //{{{
 
     decode = '0;
@@ -315,7 +326,7 @@ class riscv_model;
 
       7'h17: begin  //{{{
         decode.rd        = instr[11:7];
-        decode.imm[19:0] = instr[31:12]; // TODO VALIDATE
+        decode.imm[19:0] = instr[31:12];  // TODO VALIDATE
         decode.func      = AUIPC;
       end  //}}}
 
@@ -433,7 +444,7 @@ class riscv_model;
 
       7'h37: begin  //{{{
         decode.rd        = instr[11:7];
-        decode.imm[19:0] = instr[31:12]; // TODO VALIDATE
+        decode.imm[19:0] = instr[31:12];  // TODO VALIDATE
         decode.func      = LUI;
       end  //}}}
 
@@ -706,6 +717,50 @@ class riscv_model;
       default: return '0;
 
     endcase
+
+  endfunction  //}}}
+
+  // TODO
+  // ADD        ADDIW      ADDW       AMOADD_D   AMOADD_W   AMOAND_D   AMOAND_W
+  // AMOMAX_D   AMOMAX_W   AMOMAXU_D  AMOMAXU_W  AMOMIN_D   AMOMIN_W   AMOMINU_D  AMOMINU_W
+  // AMOOR_D    AMOOR_W    AMOSWAP_D  AMOSWAP_W  AMOXOR_D   AMOXOR_W   AND        ANDI
+  // AUIPC      BEQ        BGE        BGEU       BLT        BLTU       BNE        CSRRC
+  // CSRRCI     CSRRS      CSRRSI     CSRRW      CSRRWI     DIV        DIVU       DIVUW
+  // DIVW       EBREAK     ECALL      FADD_D     FADD_Q     FADD_S     FCLASS_D   FCLASS_Q
+  // FCLASS_S   FCVT_D_L   FCVT_D_LU  FCVT_D_Q   FCVT_D_S   FCVT_D_W   FCVT_D_WU  FCVT_L_D
+  // FCVT_L_Q   FCVT_L_S   FCVT_LU_D  FCVT_LU_Q  FCVT_LU_S  FCVT_Q_D   FCVT_Q_L   FCVT_Q_LU
+  // FCVT_Q_S   FCVT_Q_W   FCVT_Q_WU  FCVT_S_D   FCVT_S_L   FCVT_S_LU  FCVT_S_Q   FCVT_S_W
+  // FCVT_S_WU  FCVT_W_D   FCVT_W_Q   FCVT_W_S   FCVT_WU_D  FCVT_WU_Q  FCVT_WU_S  FDIV_D
+  // FDIV_Q     FDIV_S     FENCE_I    FENCE      FEQ_D      FEQ_Q      FEQ_S      FLD
+  // FLE_D      FLE_Q      FLE_S      FLQ        FLT_D      FLT_Q      FLT_S      FLW
+  // FMADD_D    FMADD_Q    FMADD_S    FMAX_D     FMAX_Q     FMAX_S     FMIN_D     FMIN_Q
+  // FMIN_S     FMSUB_D    FMSUB_Q    FMSUB_S    FMUL_D     FMUL_Q     FMUL_S     FMV_D_X
+  // FMV_W_X    FMV_X_D    FMV_X_W    FNMADD_D   FNMADD_Q   FNMADD_S   FNMSUB_D   FNMSUB_Q
+  // FNMSUB_S   FSD        FSGNJ_D    FSGNJ_Q    FSGNJ_S    FSGNJN_D   FSGNJN_Q   FSGNJN_S
+  // FSGNJX_D   FSGNJX_Q   FSGNJX_S   FSQ        FSQRT_D    FSQRT_Q    FSQRT_S    FSUB_D
+  // FSUB_Q     FSUB_S     FSW        JAL        JALR       LB         LBU        LD
+  // LH         LHU        LR_D       LR_W       LUI        LW         LWU        MUL
+  // MULH       MULHSU     MULHU      MULW       OR         ORI        REM        REMU
+  // REMUW      REMW       SB         SC_D       SC_W       SD         SH         SLL
+  // SLLI       SLLIW      SLLW       SLT        SLTI       SLTIU      SLTU       SRA
+  // SRAI       SRAIW      SRAW       SRL        SRLI       SRLIW      SRLW       SUB
+  // SUBW       SW         XOR        XORI
+  function automatic bit execute(bit [31:0] instr_word);  //{{{
+
+    decoded_inst_t instr;
+    instr = decode(instr_word);
+
+    case (instr.func)  //{{{
+
+      ADDI: begin
+        write_int_reg(instr.rd, (read_int_reg(instr.rs1) + instr.imm));
+      end
+
+      default: return 0;
+
+    endcase  //}}}
+
+    return 1;
 
   endfunction  //}}}
 

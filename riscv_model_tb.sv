@@ -27,7 +27,7 @@ Table 24.3: RISC-V control and status register (CSR) address map.
 
 */
 
-module tb_func_decode;
+module riscv_model_tb;
 
   initial begin
     $display("\033[7;38m####################### TEST STARTED #######################\033[0m");
@@ -44,48 +44,11 @@ module tb_func_decode;
   riscv_model model = new();
 
   initial begin
-    $display("%p", model.decode('h10000517));
-    $display("%p", model.decode('h00052503));
-    $display("%p", model.decode('h01c000ef));
-    $display("%p", model.decode('h00050593));
-    $display("%p", model.decode('h10000517));
-    $display("%p", model.decode('hff052503));
-    $display("%p", model.decode('h04c000ef));
-    $display("%p", model.decode('h00a00893));
-    $display("%p", model.decode('h00000073));
-    $display("%p", model.decode('hff010113));
-    $display("%p", model.decode('h00112423));
-    $display("%p", model.decode('h00a12023));
-    $display("%p", model.decode('hfff50293));
-    $display("%p", model.decode('h0002d863));
-    $display("%p", model.decode('h00100513));
-    $display("%p", model.decode('h01010113));
-    $display("%p", model.decode('h00008067));
-    $display("%p", model.decode('hfff50513));
-    $display("%p", model.decode('hfddff0ef));
-    $display("%p", model.decode('h00050313));
-    $display("%p", model.decode('h00012503));
-    $display("%p", model.decode('h00812083));
-    $display("%p", model.decode('h01010113));
-    $display("%p", model.decode('h02650533));
-    $display("%p", model.decode('h00008067));
-    $display("%p", model.decode('h00050293));
-    $display("%p", model.decode('h00058313));
-    $display("%p", model.decode('h10000517));
-    $display("%p", model.decode('hf9850513));
-    $display("%p", model.decode('h00400893));
-    $display("%p", model.decode('h00000073));
-    $display("%p", model.decode('h00028513));
-    $display("%p", model.decode('h00100893));
-    $display("%p", model.decode('h00000073));
-    $display("%p", model.decode('h10000517));
-    $display("%p", model.decode('hf9050513));
-    $display("%p", model.decode('h00400893));
-    $display("%p", model.decode('h00000073));
-    $display("%p", model.decode('h00030513));
-    $display("%p", model.decode('h00100893));
-    $display("%p", model.decode('h00000073));
-    $display("%p", model.decode('h00008067));
+    int instr = 'h00100093;
+    $display("%p", model.decode(instr));
+    $display("REG:0x%h", model.read_int_reg(1));
+    $display("WORKED:%0d", model.execute(instr));
+    $display("REG:0x%h", model.read_int_reg(1));
     $finish;
   end
 
