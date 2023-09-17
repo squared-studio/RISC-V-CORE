@@ -5,7 +5,9 @@
 // RV64I            RV64M            RV64Zifencei     RV64Zicsr
 // RV32A            RV32F            RV32D            RV32Q
 // RV64A            RV64F            RV64D            RV64Q
-class riscv_model;
+class riscv_model #(
+    parameter int XLEN = 64
+);
 
   typedef enum int {  //{{{
     INVALID_INSTRUCTION,
@@ -217,7 +219,7 @@ class riscv_model;
     logic [4:0]  rs3;
     logic [4:0]  rd;
     logic [31:0] imm;
-    logic [4:0]  shamt;
+    logic [5:0]  shamt;
     logic [3:0]  fm;
     logic [3:0]  pred;
     logic [3:0]  succ;
@@ -228,19 +230,35 @@ class riscv_model;
     logic [11:0] csr;
   } decoded_inst_t;  //}}}
 
-  local bit [7:0][7:0] rf_x[32];
+  local bit [XLEN/8-1:0][7:0] rf_x[32];
 
-  function automatic bit [63:0] read_int_reg(bit [4:0] reg_id);  //{{{
+  function automatic bit [XLEN-1:0] sign_ext(bit [XLEN-1:0] data, int len);  //{{{
+    sign_ext = data;
+    for (int i = len; i < XLEN; i++) begin
+      sign_ext[i] = data[len-1];
+    end
+  endfunction  //}}}
+
+  function automatic bit [XLEN-1:0] read_int_reg(bit [4:0] reg_id);  //{{{
     return rf_x[reg_id];
   endfunction  //}}}
 
-  function automatic bit write_int_reg(bit [4:0] reg_id, bit [63:0] data);  //{{{
-    if (reg_id == 0) begin
-      return 0;
-    end else begin
+  function automatic void write_int_reg(bit [4:0] reg_id, bit [XLEN-1:0] data);  //{{{
+    if (reg_id != 0) begin
       rf_x[reg_id] = data;
-      return '1;
     end
+  endfunction  //}}}
+
+  function automatic string rf_x_to_string();  //{{{
+    string txt;
+    $sformat(txt, "\033[0;33mINTEGER REG FILE[%0t]:\033[0m", $realtime);
+    for (int i = 0; i < 8; i++) begin
+      $sformat(txt, "%s\n%2d:0x%h", txt, i + 00, read_int_reg(i + 00));
+      $sformat(txt, "%s  %2d:0x%h", txt, i + 08, read_int_reg(i + 08));
+      $sformat(txt, "%s  %2d:0x%h", txt, i + 16, read_int_reg(i + 16));
+      $sformat(txt, "%s  %2d:0x%h", txt, i + 24, read_int_reg(i + 24));
+    end
+    return txt;
   endfunction  //}}}
 
   function automatic decoded_inst_t decode(bit [31:0] instr);  //{{{
@@ -311,7 +329,7 @@ class riscv_model;
           3'b111: decode.func = ANDI;
           default: begin
             decode.imm   = '0;
-            decode.shamt = instr[24:20];
+            decode.shamt = instr[25:20];
             case ({
               instr[31:26], instr[14:12]
             })
@@ -739,51 +757,51 @@ class riscv_model;
   // FNMSUB_S   FSD        FSGNJ_D    FSGNJ_Q    FSGNJ_S    FSGNJN_D   FSGNJN_Q   FSGNJN_S
   // FSGNJX_D   FSGNJX_Q   FSGNJX_S   FSQ        FSQRT_D    FSQRT_Q    FSQRT_S    FSUB_D
   // FSUB_Q     FSUB_S     FSW        JAL        JALR       LB         LBU        LD
-  // LH         LHU        LR_D       LR_W       LUI        LW         LWU        MUL
+  // LH         LHU        LR_D       LR_W       LW         LWU        MUL
   // MULH       MULHSU     MULHU      MULW       OR         ORI        REM        REMU
   // REMUW      REMW       SB         SC_D       SC_W       SD         SH         SLL
-  // SLLI       SLLIW      SLLW       SLT        SLTI       SLTIU      SLTU       SRA
-  // SRAI       SRAIW      SRAW       SRL        SRLI       SRLIW      SRLW       SUB
-  // SUBW       SW         XOR        XORI
-  function automatic bit execute(bit [31:0] instr_word);  //{{{
+  // SLLIW      SLLW       SLT        SLTI       SLTIU      SLTU       SRA
+  // SRAI       SRAIW      SRAW       SRL        SRLI       SRLIW      SRLW
+  // SW         XOR        XORI
+  function automatic bit execute(bit [31:0] instr_word, bit debug = 0);  //{{{
 
     decoded_inst_t instr;
     instr = decode(instr_word);
 
+    if (debug) $display("0x%h : %p", instr_word, instr);
+
     case (instr.func)  //{{{
 
       ADD: begin  //{{{
-        bit [31:0] rd_;
-        bit [31:0] rs1_;
-        bit [31:0] rs2_;
-        rs1_ = read_int_reg(instr.rs1);
-        rs2_ = read_int_reg(instr.rs2);
-        rd_  = rs1_ + rs2_;
-        write_int_reg(instr.rd, rd_);
+        write_int_reg(instr.rd, read_int_reg(instr.rs1) + read_int_reg(instr.rs2));
       end  //}}}
 
       ADDI: begin  //{{{
-        write_int_reg(instr.rd, (read_int_reg(instr.rs1) + instr.imm));
+        write_int_reg(instr.rd, (read_int_reg(instr.rs1) + sign_ext(instr.imm, 12)));
       end  //}}}
 
       ADDIW: begin  //{{{
-        bit [31:0] rd_;
-        bit [31:0] rs1_;
-        bit [11:0] imm_;
-        rs1_ = read_int_reg(instr.rs1);
-        imm_ = instr.imm;
-        rd_  = rs1_ + imm_;
-        write_int_reg(instr.rd, rd_);
+        write_int_reg(instr.rd, sign_ext(read_int_reg(instr.rs1) + sign_ext(instr.imm, 12), 31));
       end  //}}}
 
       ADDW: begin  //{{{
-        bit [63:0] rd_;
-        bit [63:0] rs1_;
-        bit [11:0] imm_;
-        rs1_ = read_int_reg(instr.rs1);
-        imm_ = instr.imm;
-        rd_  = rs1_ + imm_;
-        write_int_reg(instr.rd, rd_);
+        write_int_reg(instr.rd, sign_ext(read_int_reg(instr.rs1) + read_int_reg(instr.rs2), 31));
+      end  //}}}
+
+      LUI: begin  //{{{
+        write_int_reg(instr.rd, (sign_ext(instr.imm, 20) << 12));
+      end  //}}}
+
+      SLLI: begin  //{{{
+        write_int_reg(instr.rd, read_int_reg(instr.rs1) << instr.shamt);
+      end  //}}}
+
+      SUB: begin  //{{{
+        write_int_reg(instr.rd, read_int_reg(instr.rs1) - read_int_reg(instr.rs2));
+      end  //}}}
+
+      SUBW: begin  //{{{
+        write_int_reg(instr.rd, sign_ext(read_int_reg(instr.rs1) - read_int_reg(instr.rs2), 31));
       end  //}}}
 
       default: return 0;
@@ -795,3 +813,33 @@ class riscv_model;
   endfunction  //}}}
 
 endclass
+
+
+/*
+
+.---------------------------------------------------------------------------------------------.
+|                         Floating-Point Control and Status Registers                         |
+.--------.------------.----------.------------------------------------------------------------.
+| Number | Privilege  | Name     | Description                                                |
+|--------+------------+----------+------------------------------------------------------------|
+| 0x001  | Read/write | fflags   | Floating-Point Accrued Exceptions.                         |
+| 0x002  | Read/write | frm      | Floating-Point Dynamic Rounding Mode.                      |
+| 0x003  | Read/write | fcsr     | Floating-Point Control and Status Register (frm + fflags). |
+'--------'------------'----------'------------------------------------------------------------'
+
+.---------------------------------------------------------------------------------------------.
+|                                     Counters and Timers                                     |
+|--------.------------.----------.------------------------------------------------------------|
+| Number | Privilege  | Name     | Description                                                |
+|--------+------------+----------+------------------------------------------------------------|
+| 0xC00  | Read-only  | cycle    | Cycle counter for RDCYCLE instruction.                     |
+| 0xC01  | Read-only  | time     | Timer for RDTIME instruction.                              |
+| 0xC02  | Read-only  | instret  | Instructions-retired counter for RDINSTRET instruction.    |
+| 0xC80  | Read-only  | cycleh   | Upper 32 bits of cycle, RV32I only.                        |
+| 0xC81  | Read-only  | timeh    | Upper 32 bits of time, RV32I only.                         |
+| 0xC82  | Read-only  | instreth | Upper 32 bits of instret, RV32I only.                      |
+'--------'------------'----------'------------------------------------------------------------'
+
+Table 24.3: RISC-V control and status register (CSR) address map.
+
+*/
