@@ -2,7 +2,16 @@
 
 class riscv_model;
 
-  typedef enum int {//{{{
+  // RV64I
+  // RV64Zifencei
+  // RV64Zicsr
+  // RV64M
+  // RV64A
+  // RV64F
+  // RV64D
+  // RV64Q
+
+  typedef enum int {  //{{{
     INVALID_INSTRUCTION,
     ADD,
     ADDI,
@@ -192,9 +201,9 @@ class riscv_model;
     SW,
     XOR,
     XORI
-  } func_t;//}}}
+  } func_t;  //}}}
 
-  typedef enum logic [2:0] {//{{{
+  typedef enum logic [2:0] {  //{{{
     RNE = 0,
     RTZ = 1,
     RDN = 2,
@@ -203,9 +212,9 @@ class riscv_model;
     RM_RES_5 = 5,
     RM_RES_6 = 6,
     DYN = 7
-  } rm_t;//}}}
+  } rm_t;  //}}}
 
-  typedef struct packed {//{{{
+  typedef struct packed {  //{{{
     func_t       func;
     logic [4:0]  rs1;
     logic [4:0]  rs2;
@@ -213,28 +222,23 @@ class riscv_model;
     logic [4:0]  rd;
     logic [31:0] imm;
     logic [4:0]  shamt;
-
-    logic [3:0] fm;
-    logic [3:0] pred;
-    logic [3:0] succ;
-
-    logic aq;
-    logic rl;
-
-    rm_t rm;
-
+    logic [3:0]  fm;
+    logic [3:0]  pred;
+    logic [3:0]  succ;
+    logic        aq;
+    logic        rl;
+    rm_t         rm;
     logic [31:0] uimm;
     logic [11:0] csr;
+  } decoded_inst_t;  //}}}
 
-  } decoded_inst_t;//}}}
-
-  function automatic decoded_inst_t decode(bit [31:0] instr);//{{{
+  function automatic decoded_inst_t decode(bit [31:0] instr);  //{{{
 
     decode = '0;
 
     case (instr[6:0])
 
-      7'h03: begin//{{{
+      7'h03: begin  //{{{
         decode.rs1       = instr[19:15];
         decode.rd        = instr[11:7];
         decode.imm[11:0] = instr[31:20];
@@ -248,9 +252,9 @@ class riscv_model;
           3'b110:  decode.func = LWU;
           default: return '0;
         endcase
-      end//}}}
+      end  //}}}
 
-      7'h07: begin//{{{
+      7'h07: begin  //{{{
         decode.rs1       = instr[19:15];
         decode.rd        = instr[11:7];
         decode.imm[11:0] = instr[31:20];
@@ -260,9 +264,9 @@ class riscv_model;
           3'b100:  decode.func = FLQ;
           default: return '0;
         endcase
-      end//}}}
+      end  //}}}
 
-      7'h0F: begin//{{{
+      7'h0F: begin  //{{{
         decode.rs1 = instr[19:15];
         decode.rd  = instr[11:7];
         case (instr[14:12])
@@ -281,9 +285,9 @@ class riscv_model;
           3'b001:  decode.func = FENCE_I;
           default: return '0;
         endcase
-      end//}}}
+      end  //}}}
 
-      7'h13: begin//{{{
+      7'h13: begin  //{{{
         decode.rs1       = instr[19:15];
         decode.rd        = instr[11:7];
         decode.imm[11:0] = instr[31:20];
@@ -307,15 +311,15 @@ class riscv_model;
             endcase
           end
         endcase
-      end//}}}
+      end  //}}}
 
-      7'h17: begin//{{{
-        decode.rd         = instr[11:7];
-        decode.imm[31:12] = instr[31:12];  // TODO CHECK
-        decode.func       = AUIPC;
-      end//}}}
+      7'h17: begin  //{{{
+        decode.rd        = instr[11:7];
+        decode.imm[19:0] = instr[31:12]; // TODO VALIDATE
+        decode.func      = AUIPC;
+      end  //}}}
 
-      7'h1B: begin//{{{
+      7'h1B: begin  //{{{
         decode.rs1       = instr[19:15];
         decode.rd        = instr[11:7];
         decode.imm[11:0] = instr[31:20];
@@ -334,9 +338,9 @@ class riscv_model;
             endcase
           end
         endcase
-      end//}}}
+      end  //}}}
 
-      7'h23: begin//{{{
+      7'h23: begin  //{{{
         decode.rs1       = instr[19:15];
         decode.rs2       = instr[24:20];
         decode.imm[11:5] = instr[31:25];
@@ -348,9 +352,9 @@ class riscv_model;
           3'b011:  decode.func = SD;
           default: return '0;
         endcase
-      end//}}}
+      end  //}}}
 
-      7'h27: begin//{{{
+      7'h27: begin  //{{{
         case (instr[14:12])
           3'b010:  decode.func = FSW;
           3'b011:  decode.func = FSD;
@@ -361,9 +365,9 @@ class riscv_model;
         decode.rs2       = instr[24:20];
         decode.imm[11:5] = instr[31:25];
         decode.imm[4:0]  = instr[11:7];
-      end//}}}
+      end  //}}}
 
-      7'h2F: begin//{{{
+      7'h2F: begin  //{{{
         decode.rs1 = instr[19:15];
         decode.rs2 = instr[24:20];
         decode.rd  = instr[11:7];
@@ -396,9 +400,9 @@ class riscv_model;
           8'b11100_011: decode.func = AMOMAXU_D;
           default: return '0;
         endcase
-      end//}}}
+      end  //}}}
 
-      7'h33: begin//{{{
+      7'h33: begin  //{{{
         decode.rs1 = instr[19:15];
         decode.rs2 = instr[24:20];
         decode.rd  = instr[11:7];
@@ -425,15 +429,15 @@ class riscv_model;
           10'b0000001_111: decode.func = REMU;
           default: return '0;
         endcase
-      end//}}}
+      end  //}}}
 
-      7'h37: begin//{{{
-        decode.rd         = instr[11:7];
-        decode.imm[31:12] = instr[31:12];
-        decode.func       = LUI;
-      end//}}}
+      7'h37: begin  //{{{
+        decode.rd        = instr[11:7];
+        decode.imm[19:0] = instr[31:12]; // TODO VALIDATE
+        decode.func      = LUI;
+      end  //}}}
 
-      7'h3B: begin//{{{
+      7'h3B: begin  //{{{
         decode.rs1 = instr[19:15];
         decode.rs2 = instr[24:20];
         decode.rd  = instr[11:7];
@@ -452,9 +456,9 @@ class riscv_model;
           10'b0000001_111: decode.func = REMUW;
           default: return '0;
         endcase
-      end//}}}
+      end  //}}}
 
-      7'h43: begin//{{{
+      7'h43: begin  //{{{
         decode.rs1 = instr[19:15];
         decode.rs2 = instr[24:20];
         decode.rs3 = instr[31:27];
@@ -466,9 +470,9 @@ class riscv_model;
           2'b11:   decode.func = FMADD_Q;
           default: return '0;
         endcase
-      end//}}}
+      end  //}}}
 
-      7'h47: begin//{{{
+      7'h47: begin  //{{{
         decode.rs1 = instr[19:15];
         decode.rs2 = instr[24:20];
         decode.rs3 = instr[31:27];
@@ -480,9 +484,9 @@ class riscv_model;
           2'b11:   decode.func = FMSUB_Q;
           default: return '0;
         endcase
-      end//}}}
+      end  //}}}
 
-      7'h4B: begin//{{{
+      7'h4B: begin  //{{{
         decode.rs1 = instr[19:15];
         decode.rs2 = instr[24:20];
         decode.rs3 = instr[31:27];
@@ -494,9 +498,9 @@ class riscv_model;
           2'b11:   decode.func = FNMSUB_Q;
           default: return '0;
         endcase
-      end//}}}
+      end  //}}}
 
-      7'h4F: begin//{{{
+      7'h4F: begin  //{{{
         decode.rs1 = instr[19:15];
         decode.rs2 = instr[24:20];
         decode.rs3 = instr[31:27];
@@ -508,9 +512,9 @@ class riscv_model;
           2'b11:   decode.func = FNMADD_Q;
           default: return '0;
         endcase
-      end//}}}
+      end  //}}}
 
-      7'h53: begin//{{{
+      7'h53: begin  //{{{
         case (instr[31:25])
           //--------------------------------------------------------------------
           7'b0000000, 7'b0000001, 7'b0000011, 7'b0000100, 7'b0000101,
@@ -638,9 +642,9 @@ class riscv_model;
           //--------------------------------------------------------------------
           default: return '0;
         endcase
-      end//}}}
+      end  //}}}
 
-      7'h63: begin//{{{
+      7'h63: begin  //{{{
         decode.rs1       = instr[19:15];
         decode.rs2       = instr[24:20];
         decode.imm[12]   = instr[31];
@@ -656,9 +660,9 @@ class riscv_model;
           3'b111:  decode.func = BGEU;
           default: return '0;
         endcase
-      end//}}}
+      end  //}}}
 
-      7'h67: begin//{{{
+      7'h67: begin  //{{{
         case (instr[14:12])
           3'b000:  decode.func = JALR;
           default: return '0;
@@ -666,18 +670,18 @@ class riscv_model;
         decode.rs1       = instr[19:15];
         decode.rd        = instr[11:7];
         decode.imm[11:0] = instr[14:12];
-      end//}}}
+      end  //}}}
 
-      7'h6F: begin//{{{
+      7'h6F: begin  //{{{
         decode.rd         = instr[11:7];
         decode.imm[20]    = instr[31];
         decode.imm[10:1]  = instr[30:21];
         decode.imm[11]    = instr[20];
         decode.imm[19:12] = instr[19:12];
         decode.func       = JAL;
-      end//}}}
+      end  //}}}
 
-      7'h73: begin//{{{
+      7'h73: begin  //{{{
         case (instr[31:7])
           25'b000000000000_00000_000_00000: decode.func = ECALL;
           25'b000000000001_00000_000_00000: decode.func = EBREAK;
@@ -697,12 +701,12 @@ class riscv_model;
             endcase
           end
         endcase
-      end//}}}
+      end  //}}}
 
       default: return '0;
 
     endcase
 
-  endfunction//}}}
+  endfunction  //}}}
 
 endclass
