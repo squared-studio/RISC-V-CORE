@@ -43,12 +43,23 @@ module riscv_model_tb;
 
   riscv_model model = new();
 
+  function automatic void print_int_reg_file();
+    for (int i = 0; i < 32; i++) begin
+      $display("%2d:0x%h", i, model.read_int_reg(i));
+    end
+  endfunction
+
   initial begin
-    int instr = 'h00100093;
-    $display("%p", model.decode(instr));
-    $display("REG:0x%h", model.read_int_reg(1));
-    $display("WORKED:%0d", model.execute(instr));
-    $display("REG:0x%h", model.read_int_reg(1));
+    $display("\n\n\n\n");
+    print_int_reg_file();
+    $display("\n\n\n\n");
+
+    model.execute('h00100093);
+
+    $display("\n\n\n\n");
+    print_int_reg_file();
+    $display("\n\n\n\n");
+
     $finish;
   end
 

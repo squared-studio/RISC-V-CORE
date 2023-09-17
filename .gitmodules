@@ -1,3 +1,6 @@
 [submodule "sub/SystemVerilog"]
 	path = sub/SystemVerilog
 	url = https://github.com/squared-studio/SystemVerilog.git
+[submodule "sub/RISC-V-tests"]
+	path = sub/RISC-V-tests
+	url = https://github.com/squared-studio/RISC-V-tests.git

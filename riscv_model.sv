@@ -721,7 +721,7 @@ class riscv_model;
   endfunction  //}}}
 
   // TODO
-  // ADD        ADDIW      ADDW       AMOADD_D   AMOADD_W   AMOAND_D   AMOAND_W
+  // AMOADD_D   AMOADD_W   AMOAND_D   AMOAND_W
   // AMOMAX_D   AMOMAX_W   AMOMAXU_D  AMOMAXU_W  AMOMIN_D   AMOMIN_W   AMOMINU_D  AMOMINU_W
   // AMOOR_D    AMOOR_W    AMOSWAP_D  AMOSWAP_W  AMOXOR_D   AMOXOR_W   AND        ANDI
   // AUIPC      BEQ        BGE        BGEU       BLT        BLTU       BNE        CSRRC
@@ -752,9 +752,39 @@ class riscv_model;
 
     case (instr.func)  //{{{
 
-      ADDI: begin
+      ADD: begin  //{{{
+        bit [31:0] rd_;
+        bit [31:0] rs1_;
+        bit [31:0] rs2_;
+        rs1_ = read_int_reg(instr.rs1);
+        rs2_ = read_int_reg(instr.rs2);
+        rd_  = rs1_ + rs2_;
+        write_int_reg(instr.rd, rd_);
+      end  //}}}
+
+      ADDI: begin  //{{{
         write_int_reg(instr.rd, (read_int_reg(instr.rs1) + instr.imm));
-      end
+      end  //}}}
+
+      ADDIW: begin  //{{{
+        bit [31:0] rd_;
+        bit [31:0] rs1_;
+        bit [11:0] imm_;
+        rs1_ = read_int_reg(instr.rs1);
+        imm_ = instr.imm;
+        rd_  = rs1_ + imm_;
+        write_int_reg(instr.rd, rd_);
+      end  //}}}
+
+      ADDW: begin  //{{{
+        bit [63:0] rd_;
+        bit [63:0] rs1_;
+        bit [11:0] imm_;
+        rs1_ = read_int_reg(instr.rs1);
+        imm_ = instr.imm;
+        rd_  = rs1_ + imm_;
+        write_int_reg(instr.rd, rd_);
+      end  //}}}
 
       default: return 0;
 
