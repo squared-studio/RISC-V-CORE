@@ -1,6 +1,6 @@
 .PHONY: vivado
 vivado: clean
-	@xvlog -sv tb_func_decode.sv
+	@xvlog -sv riscv_model.sv tb_func_decode.sv
 	@xelab tb_func_decode -s tb
 	@xsim tb -runall
 
