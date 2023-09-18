@@ -785,7 +785,7 @@ class riscv_model #(
   // FSGNJX_D   FSGNJX_Q   FSGNJX_S   FSQ        FSQRT_D    FSQRT_Q    FSQRT_S    FSUB_D
   // FSUB_Q     FSUB_S     FSW        LB         LBU        LD
   // LH         LHU        LR_D       LR_W       LW         LWU        MUL
-  // MULH       MULHSU     MULHU      MULW       OR         REM        REMU
+  // MULH       MULHSU     MULHU      MULW       REM        REMU
   // REMUW      REMW       SB         SC_D       SC_W       SD         SH
   // SLT        SLTI       SLTIU      SLTU       SRA
   // SRAI       SRAIW      SRAW       SRL        SRLI       SRLIW      SRLW
@@ -1566,7 +1566,7 @@ class riscv_model #(
       $display("\033[1;31m\n%m failed to execute 0x%h\n%p\n\033[0m", instr_word, instr);
     end
 
-    pc = pc + 4;
+    pc = pc + 4; // TODO MOVES TO FETCH
 
   endtask  //}}}
 
