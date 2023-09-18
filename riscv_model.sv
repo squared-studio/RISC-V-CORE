@@ -6,7 +6,7 @@
 // RV32A            RV32F            RV32D            RV32Q
 // RV64A            RV64F            RV64D            RV64Q
 class riscv_model #(
-    parameter bit L2_CACHE = 0,
+    parameter bit SOFT_MEM = 1,
     parameter int XLEN     = 64
 );
 
@@ -251,6 +251,25 @@ class riscv_model #(
   //-METHODS{{{
   //////////////////////////////////////////////////////////////////////////////////////////////////
 
+  task automatic int_read_mem(input bit [XLEN-1:0] addr, output bit [XLEN/8-1:0][7:0] data);  //{{{
+    if (SOFT_MEM) begin
+      foreach (data[i]) begin
+        data[i] = mem[addr+i];
+      end
+    end
+  endtask  //}}}
+
+  task automatic int_write_mem(input bit [XLEN-1:0] addr, input bit [XLEN/8-1:0][7:0] data,
+                               input bit [XLEN/8-1:0] strb);  //{{{
+    if (SOFT_MEM) begin
+      foreach (data[i]) begin
+        if (strb[i]) begin
+          mem[addr+i] = data[i];
+        end
+      end
+    end
+  endtask  //}}}
+
   function automatic bit [XLEN-1:0] get_pc();  //{{{
     return pc;
   endfunction  //}}}
@@ -259,7 +278,7 @@ class riscv_model #(
     pc = addr;
   endfunction  //}}}
 
-  function automatic bit [XLEN-1:0] sign_ext(bit [XLEN-1:0] data, int len);  //{{{
+  function automatic bit signed [XLEN-1:0] sign_ext(bit [XLEN-1:0] data, int len);  //{{{
     sign_ext = data;
     for (int i = len; i < XLEN; i++) begin
       sign_ext[i] = data[len-1];
@@ -765,11 +784,10 @@ class riscv_model #(
 
   endfunction  //}}}
 
-  // TODO
+  // ------------------------------------------TODO------------------------------------------
   // AMOADD_D   AMOADD_W   AMOAND_D   AMOAND_W
   // AMOMAX_D   AMOMAX_W   AMOMAXU_D  AMOMAXU_W  AMOMIN_D   AMOMIN_W   AMOMINU_D  AMOMINU_W
-  // AMOOR_D    AMOOR_W    AMOSWAP_D  AMOSWAP_W  AMOXOR_D   AMOXOR_W
-  // BEQ        BGE        BGEU       BLT        BLTU       BNE        CSRRC
+  // AMOOR_D    AMOOR_W    AMOSWAP_D  AMOSWAP_W  AMOXOR_D   AMOXOR_W   CSRRC
   // CSRRCI     CSRRS      CSRRSI     CSRRW      CSRRWI     DIV        DIVU       DIVUW
   // DIVW       EBREAK     ECALL      FADD_D     FADD_Q     FADD_S     FCLASS_D   FCLASS_Q
   // FCLASS_S   FCVT_D_L   FCVT_D_LU  FCVT_D_Q   FCVT_D_S   FCVT_D_W   FCVT_D_WU  FCVT_L_D
@@ -783,13 +801,10 @@ class riscv_model #(
   // FMV_W_X    FMV_X_D    FMV_X_W    FNMADD_D   FNMADD_Q   FNMADD_S   FNMSUB_D   FNMSUB_Q
   // FNMSUB_S   FSD        FSGNJ_D    FSGNJ_Q    FSGNJ_S    FSGNJN_D   FSGNJN_Q   FSGNJN_S
   // FSGNJX_D   FSGNJX_Q   FSGNJX_S   FSQ        FSQRT_D    FSQRT_Q    FSQRT_S    FSUB_D
-  // FSUB_Q     FSUB_S     FSW        LB         LBU        LD
-  // LH         LHU        LR_D       LR_W       LW         LWU        MUL
+  // FSUB_Q     FSUB_S     FSW        LR_D       LR_W       MUL
   // MULH       MULHSU     MULHU      MULW       REM        REMU
-  // REMUW      REMW       SB         SC_D       SC_W       SD         SH
-  // SLT        SLTI       SLTIU      SLTU       SRA
-  // SRAI       SRAIW      SRAW       SRL        SRLI       SRLIW      SRLW
-  // SW
+  // REMUW      REMW       SC_D       SC_W       SRAIW      SRAW       SRLIW      SRLW
+  // ------------------------------------------TODO------------------------------------------
   task automatic execute(input bit [31:0] instr_word, input bit print = 0);  //{{{
 
     decoded_inst_t instr;
@@ -797,6 +812,8 @@ class riscv_model #(
 
     execution_ok = 1;
     instr = decode(instr_word);
+
+    pc = pc + 4;  // TODO MOVES TO FETCH
 
     if (print) $display("0x%h : %p", instr_word, instr);
 
@@ -903,27 +920,39 @@ class riscv_model #(
       end  //}}}
 
       BEQ: begin  //{{{
-        execution_ok = 0;
+        if (read_int_reg(instr.rs1) == read_int_reg(instr.rs2)) begin
+          pc = pc + sign_ext(instr.imm, 12);
+        end
       end  //}}}
 
       BGE: begin  //{{{
-        execution_ok = 0;
+        if (signed'(read_int_reg(instr.rs1)) >= signed'(read_int_reg(instr.rs2))) begin
+          pc = pc + sign_ext(instr.imm, 12);
+        end
       end  //}}}
 
       BGEU: begin  //{{{
-        execution_ok = 0;
+        if (read_int_reg(instr.rs1) >= read_int_reg(instr.rs2)) begin
+          pc = pc + sign_ext(instr.imm, 12);
+        end
       end  //}}}
 
       BLT: begin  //{{{
-        execution_ok = 0;
+        if (signed'(read_int_reg(instr.rs1)) < signed'(read_int_reg(instr.rs2))) begin
+          pc = pc + sign_ext(instr.imm, 12);
+        end
       end  //}}}
 
       BLTU: begin  //{{{
-        execution_ok = 0;
+        if (read_int_reg(instr.rs1) < read_int_reg(instr.rs2)) begin
+          pc = pc + sign_ext(instr.imm, 12);
+        end
       end  //}}}
 
       BNE: begin  //{{{
-        execution_ok = 0;
+        if (read_int_reg(instr.rs1) != read_int_reg(instr.rs2)) begin
+          pc = pc + sign_ext(instr.imm, 12);
+        end
       end  //}}}
 
       CSRRC: begin  //{{{
@@ -971,7 +1000,49 @@ class riscv_model #(
       end  //}}}
 
       ECALL: begin  //{{{
-        execution_ok = 0;
+        case (read_int_reg(
+            17
+        ))
+
+          1: $display("\033[1;36m%0d\033[0m", read_int_reg(10));
+
+          4: begin
+            bit [XLEN-1:0] addr;
+            bit [XLEN/8-1:0][7:0] data;
+            int data_avl;
+            bit keep_going;
+            string txt;
+
+            txt  = "";
+            addr = read_int_reg(10);
+            data_avl   = 0;
+            keep_going = 1;
+            while (keep_going) begin
+              if (data_avl == 0) begin
+                int_read_mem(addr, data);
+                data_avl = 8;
+              end
+
+              if (data[0] == 0) begin
+                keep_going = 0;
+              end else begin
+                $sformat(txt, "%s%s", txt, data[0]);
+                data = data >> 8;
+                data_avl--;
+              end
+            end
+            $display("\033[1;36m%s\033[0m", txt);
+          end
+
+          10: $display("\033[1;36mPROGRAM EXIT CODE: 0\033[0m");
+
+          11: $display("\033[1;36m%s\033[0m", byte'(read_int_reg(10)));
+
+          93: $display("\033[1;36mPROGRAM EXIT CODE: %0d\033[0m", read_int_reg(10));
+
+          default: $display("\033[1;36mSERVICE ROUTINE %0d NOT SUPPORTED\033[0m", read_int_reg(17));
+
+        endcase
       end  //}}}
 
       FADD_D: begin  //{{{
@@ -1371,23 +1442,38 @@ class riscv_model #(
       end  //}}}
 
       LB: begin  //{{{
-        execution_ok = 0;
+        bit [XLEN-1:0] mem_data;
+        int_read_mem((read_int_reg(instr.rs1) + sign_ext(instr.imm, 12)), mem_data);
+        mem_data = sign_ext(mem_data, 8);
+        write_int_reg(instr.rd, mem_data);
       end  //}}}
 
       LBU: begin  //{{{
-        execution_ok = 0;
+        bit [XLEN-1:0] mem_data;
+        int_read_mem((read_int_reg(instr.rs1) + sign_ext(instr.imm, 12)), mem_data);
+        mem_data = mem_data & 'hFF;
+        write_int_reg(instr.rd, mem_data);
       end  //}}}
 
       LD: begin  //{{{
-        execution_ok = 0;
+        bit [XLEN-1:0] mem_data;
+        int_read_mem((read_int_reg(instr.rs1) + sign_ext(instr.imm, 12)), mem_data);
+        mem_data = sign_ext(mem_data, 64);
+        write_int_reg(instr.rd, mem_data);
       end  //}}}
 
       LH: begin  //{{{
-        execution_ok = 0;
+        bit [XLEN-1:0] mem_data;
+        int_read_mem((read_int_reg(instr.rs1) + sign_ext(instr.imm, 12)), mem_data);
+        mem_data = sign_ext(mem_data, 16);
+        write_int_reg(instr.rd, mem_data);
       end  //}}}
 
       LHU: begin  //{{{
-        execution_ok = 0;
+        bit [XLEN-1:0] mem_data;
+        int_read_mem((read_int_reg(instr.rs1) + sign_ext(instr.imm, 12)), mem_data);
+        mem_data = mem_data & 'hFFFF;
+        write_int_reg(instr.rd, mem_data);
       end  //}}}
 
       LR_D: begin  //{{{
@@ -1403,11 +1489,17 @@ class riscv_model #(
       end  //}}}
 
       LW: begin  //{{{
-        execution_ok = 0;
+        bit [XLEN-1:0] mem_data;
+        int_read_mem((read_int_reg(instr.rs1) + sign_ext(instr.imm, 12)), mem_data);
+        mem_data = sign_ext(mem_data, 32);
+        write_int_reg(instr.rd, mem_data);
       end  //}}}
 
       LWU: begin  //{{{
-        execution_ok = 0;
+        bit [XLEN-1:0] mem_data;
+        int_read_mem((read_int_reg(instr.rs1) + sign_ext(instr.imm, 12)), mem_data);
+        mem_data = mem_data & 'hFFFFFFFF;
+        write_int_reg(instr.rd, mem_data);
       end  //}}}
 
       MUL: begin  //{{{
@@ -1455,7 +1547,8 @@ class riscv_model #(
       end  //}}}
 
       SB: begin  //{{{
-        execution_ok = 0;
+        int_write_mem(read_int_reg(instr.rs1) + sign_ext(instr.imm, 12), read_int_reg(instr.rs2),
+                      'h1);
       end  //}}}
 
       SC_D: begin  //{{{
@@ -1467,11 +1560,13 @@ class riscv_model #(
       end  //}}}
 
       SD: begin  //{{{
-        execution_ok = 0;
+        int_write_mem(read_int_reg(instr.rs1) + sign_ext(instr.imm, 12), read_int_reg(instr.rs2),
+                      'hFF);
       end  //}}}
 
       SH: begin  //{{{
-        execution_ok = 0;
+        int_write_mem(read_int_reg(instr.rs1) + sign_ext(instr.imm, 12), read_int_reg(instr.rs2),
+                      'h3);
       end  //}}}
 
       SLL: begin  //{{{
@@ -1491,27 +1586,32 @@ class riscv_model #(
       end  //}}}
 
       SLT: begin  //{{{
-        execution_ok = 0;
+        write_int_reg(instr.rd, (signed'(read_int_reg(instr.rs1)) < signed'(read_int_reg(instr.rs2
+                      ))));
       end  //}}}
 
       SLTI: begin  //{{{
-        execution_ok = 0;
+        write_int_reg(instr.rd, (signed'(read_int_reg(instr.rs1)) < signed'(sign_ext(instr.imm, 12
+                      ))));
       end  //}}}
 
       SLTIU: begin  //{{{
-        execution_ok = 0;
+        write_int_reg(instr.rd, (read_int_reg(instr.rs1) < sign_ext(instr.imm, 12)));
       end  //}}}
 
       SLTU: begin  //{{{
-        execution_ok = 0;
+        write_int_reg(instr.rd, (read_int_reg(instr.rs1) < read_int_reg(instr.rs2)));
       end  //}}}
 
       SRA: begin  //{{{
-        execution_ok = 0;
+        write_int_reg(
+            instr.rd, sign_ext(
+            read_int_reg(instr.rs1) >> read_int_reg(instr.rs2), (XLEN - read_int_reg(instr.rs2))));
       end  //}}}
 
       SRAI: begin  //{{{
-        execution_ok = 0;
+        write_int_reg(instr.rd, sign_ext(
+                      read_int_reg(instr.rs1) >> instr.shamt, (XLEN - instr.shamt)));
       end  //}}}
 
       SRAIW: begin  //{{{
@@ -1523,11 +1623,11 @@ class riscv_model #(
       end  //}}}
 
       SRL: begin  //{{{
-        execution_ok = 0;
+        write_int_reg(instr.rd, read_int_reg(instr.rs1) >> read_int_reg(instr.rs2));
       end  //}}}
 
       SRLI: begin  //{{{
-        execution_ok = 0;
+        write_int_reg(instr.rd, read_int_reg(instr.rs1) >> instr.shamt);
       end  //}}}
 
       SRLIW: begin  //{{{
@@ -1547,7 +1647,8 @@ class riscv_model #(
       end  //}}}
 
       SW: begin  //{{{
-        execution_ok = 0;
+        int_write_mem(read_int_reg(instr.rs1) + sign_ext(instr.imm, 12), read_int_reg(instr.rs2),
+                      'hF);
       end  //}}}
 
       XOR: begin  //{{{
@@ -1565,8 +1666,6 @@ class riscv_model #(
     if (!execution_ok) begin
       $display("\033[1;31m\n%m failed to execute 0x%h\n%p\n\033[0m", instr_word, instr);
     end
-
-    pc = pc + 4; // TODO MOVES TO FETCH
 
   endtask  //}}}
 

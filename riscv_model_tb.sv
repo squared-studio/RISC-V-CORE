@@ -14,17 +14,26 @@ module riscv_model_tb;
 
   riscv_model model = new();
 
-`define EXE(__HEX__)                  \
-  model.execute('h``__HEX__``, 1);    \
+  `define EXE(__HEX__)                  \
+    model.execute('h``__HEX__``, 1);    \
 
+  localparam int XLEN = 64;
   initial begin
 
-    `EXE(00100093)
-    `EXE(02009093)
-    `EXE(00200113)
-    `EXE(402081b3)
-    `EXE(4020823b)
+    `EXE(04600513)
+    `EXE(10a00023)
+    `EXE(04f00513)
+    `EXE(10a000a3)
+    `EXE(04500513)
+    `EXE(10a00123)
+    `EXE(05a00513)
+    `EXE(10a001a3)
+    `EXE(10000513)
+    `EXE(00400893)
     `EXE(00000073)
+    `EXE(00a00893)
+    `EXE(00000073)
+
 
     $display("\n");
     $display("%s", model.int_reg_to_string());
