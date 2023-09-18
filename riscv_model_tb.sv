@@ -14,8 +14,8 @@ module riscv_model_tb;
 
   riscv_model model = new();
 
-`define EXE(__HEX__)                                                                    \
-  if (!model.execute('h``__HEX__``)) $display(`"FAILED TO EXEECUTE ``__HEX__`` `");   \
+`define EXE(__HEX__)              \
+  model.execute('h``__HEX__``);   \
 
   initial begin
 
@@ -24,6 +24,7 @@ module riscv_model_tb;
     `EXE(00200113)
     `EXE(402081b3)
     `EXE(4020823b)
+    `EXE(00000073)
 
     $display("\n");
     $display("%s", model.int_reg_to_string());

@@ -6,7 +6,8 @@
 // RV32A            RV32F            RV32D            RV32Q
 // RV64A            RV64F            RV64D            RV64Q
 class riscv_model #(
-    parameter int XLEN = 64
+    parameter bit L2_CACHE = 0,
+    parameter int XLEN     = 64
 );
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -240,8 +241,8 @@ class riscv_model #(
   //-VARIABLES{{{
   //////////////////////////////////////////////////////////////////////////////////////////////////
 
+  local bit [7:0] mem[longint];
   local bit [XLEN-1:0] pc;
-  local bit [7:0] mem[longint]; // TODO : MEM-IO
   local bit [XLEN/8-1:0][7:0] int_reg[32];
 
   //}}}
@@ -767,8 +768,8 @@ class riscv_model #(
   // TODO
   // AMOADD_D   AMOADD_W   AMOAND_D   AMOAND_W
   // AMOMAX_D   AMOMAX_W   AMOMAXU_D  AMOMAXU_W  AMOMIN_D   AMOMIN_W   AMOMINU_D  AMOMINU_W
-  // AMOOR_D    AMOOR_W    AMOSWAP_D  AMOSWAP_W  AMOXOR_D   AMOXOR_W   AND        ANDI
-  // AUIPC      BEQ        BGE        BGEU       BLT        BLTU       BNE        CSRRC
+  // AMOOR_D    AMOOR_W    AMOSWAP_D  AMOSWAP_W  AMOXOR_D   AMOXOR_W
+  // BEQ        BGE        BGEU       BLT        BLTU       BNE        CSRRC
   // CSRRCI     CSRRS      CSRRSI     CSRRW      CSRRWI     DIV        DIVU       DIVUW
   // DIVW       EBREAK     ECALL      FADD_D     FADD_Q     FADD_S     FCLASS_D   FCLASS_Q
   // FCLASS_S   FCVT_D_L   FCVT_D_LU  FCVT_D_Q   FCVT_D_S   FCVT_D_W   FCVT_D_WU  FCVT_L_D
@@ -782,16 +783,19 @@ class riscv_model #(
   // FMV_W_X    FMV_X_D    FMV_X_W    FNMADD_D   FNMADD_Q   FNMADD_S   FNMSUB_D   FNMSUB_Q
   // FNMSUB_S   FSD        FSGNJ_D    FSGNJ_Q    FSGNJ_S    FSGNJN_D   FSGNJN_Q   FSGNJN_S
   // FSGNJX_D   FSGNJX_Q   FSGNJX_S   FSQ        FSQRT_D    FSQRT_Q    FSQRT_S    FSUB_D
-  // FSUB_Q     FSUB_S     FSW        JAL        JALR       LB         LBU        LD
+  // FSUB_Q     FSUB_S     FSW        LB         LBU        LD
   // LH         LHU        LR_D       LR_W       LW         LWU        MUL
-  // MULH       MULHSU     MULHU      MULW       OR         ORI        REM        REMU
+  // MULH       MULHSU     MULHU      MULW       OR         REM        REMU
   // REMUW      REMW       SB         SC_D       SC_W       SD         SH         SLL
   // SLLIW      SLLW       SLT        SLTI       SLTIU      SLTU       SRA
   // SRAI       SRAIW      SRAW       SRL        SRLI       SRLIW      SRLW
-  // SW         XOR        XORI
-  function automatic bit execute(bit [31:0] instr_word, bit print = 0);  //{{{
+  // SW
+  task automatic execute(input bit [31:0] instr_word, input bit print = 0);  //{{{
 
     decoded_inst_t instr;
+    bit execution_ok;
+
+    execution_ok = 1;
     instr = decode(instr_word);
 
     if (print) $display("0x%h : %p", instr_word, instr);
@@ -815,579 +819,584 @@ class riscv_model #(
       end  //}}}
 
       AMOADD_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       AMOADD_W: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       AMOAND_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       AMOAND_W: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       AMOMAX_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       AMOMAX_W: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       AMOMAXU_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       AMOMAXU_W: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       AMOMIN_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       AMOMIN_W: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       AMOMINU_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       AMOMINU_W: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       AMOOR_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       AMOOR_W: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       AMOSWAP_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       AMOSWAP_W: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       AMOXOR_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       AMOXOR_W: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       AND: begin  //{{{
-        return '0;
+        write_int_reg(instr.rd, read_int_reg(instr.rs1) & read_int_reg(instr.rs2));
       end  //}}}
 
       ANDI: begin  //{{{
-        return '0;
+        write_int_reg(instr.rd, (read_int_reg(instr.rs1) & sign_ext(instr.imm, 12)));
       end  //}}}
 
       AUIPC: begin  //{{{
-        return '0;
+        write_int_reg(instr.rd, (pc + sign_ext(instr.imm, 20) << 12));
       end  //}}}
 
       BEQ: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       BGE: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       BGEU: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       BLT: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       BLTU: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       BNE: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       CSRRC: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       CSRRCI: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       CSRRS: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       CSRRSI: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       CSRRW: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       CSRRWI: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       DIV: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       DIVU: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       DIVUW: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       DIVW: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       EBREAK: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       ECALL: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FADD_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FADD_Q: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FADD_S: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCLASS_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCLASS_Q: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCLASS_S: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCVT_D_L: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCVT_D_LU: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCVT_D_Q: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCVT_D_S: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCVT_D_W: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCVT_D_WU: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCVT_L_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCVT_L_Q: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCVT_L_S: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCVT_LU_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCVT_LU_Q: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCVT_LU_S: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCVT_Q_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCVT_Q_L: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCVT_Q_LU: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCVT_Q_S: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCVT_Q_W: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCVT_Q_WU: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCVT_S_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCVT_S_L: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCVT_S_LU: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCVT_S_Q: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCVT_S_W: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCVT_S_WU: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCVT_W_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCVT_W_Q: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCVT_W_S: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCVT_WU_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCVT_WU_Q: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FCVT_WU_S: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FDIV_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FDIV_Q: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FDIV_S: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FENCE_I: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FENCE: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FEQ_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FEQ_Q: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FEQ_S: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FLD: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FLE_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FLE_Q: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FLE_S: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FLQ: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FLT_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FLT_Q: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FLT_S: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FLW: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FMADD_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FMADD_Q: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FMADD_S: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FMAX_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FMAX_Q: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FMAX_S: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FMIN_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FMIN_Q: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FMIN_S: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FMSUB_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FMSUB_Q: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FMSUB_S: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FMUL_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FMUL_Q: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FMUL_S: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FMV_D_X: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FMV_W_X: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FMV_X_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FMV_X_W: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FNMADD_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FNMADD_Q: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FNMADD_S: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FNMSUB_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FNMSUB_Q: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FNMSUB_S: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FSD: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FSGNJ_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FSGNJ_Q: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FSGNJ_S: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FSGNJN_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FSGNJN_Q: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FSGNJN_S: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FSGNJX_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FSGNJX_Q: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FSGNJX_S: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FSQ: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FSQRT_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FSQRT_Q: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FSQRT_S: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FSUB_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FSUB_Q: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FSUB_S: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       FSW: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       JAL: begin  //{{{
-        return '0;
+        // TODO CHECK
+        write_int_reg(instr.rd, pc + 4);
+        pc = pc + sign_ext(instr.imm, 20);
       end  //}}}
 
       JALR: begin  //{{{
-        return '0;
+        write_int_reg(instr.rd, pc + 4);
+        pc = read_int_reg(instr.rs1) + sign_ext(instr.imm, 12);
+        pc = pc >> 1;
+        pc = pc << 1;
       end  //}}}
 
       LB: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       LBU: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       LD: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       LH: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       LHU: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       LR_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       LR_W: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       LUI: begin  //{{{
@@ -1395,79 +1404,79 @@ class riscv_model #(
       end  //}}}
 
       LW: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       LWU: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       MUL: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       MULH: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       MULHSU: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       MULHU: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       MULW: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       OR: begin  //{{{
-        return '0;
+        write_int_reg(instr.rd, read_int_reg(instr.rs1) | read_int_reg(instr.rs2));
       end  //}}}
 
       ORI: begin  //{{{
-        return '0;
+        write_int_reg(instr.rd, (read_int_reg(instr.rs1) | sign_ext(instr.imm, 12)));
       end  //}}}
 
       REM: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       REMU: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       REMUW: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       REMW: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       SB: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       SC_D: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       SC_W: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       SD: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       SH: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       SLL: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       SLLI: begin  //{{{
@@ -1475,59 +1484,59 @@ class riscv_model #(
       end  //}}}
 
       SLLIW: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       SLLW: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       SLT: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       SLTI: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       SLTIU: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       SLTU: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       SRA: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       SRAI: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       SRAIW: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       SRAW: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       SRL: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       SRLI: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       SRLIW: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       SRLW: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       SUB: begin  //{{{
@@ -1539,24 +1548,28 @@ class riscv_model #(
       end  //}}}
 
       SW: begin  //{{{
-        return '0;
+        execution_ok = 0;
       end  //}}}
 
       XOR: begin  //{{{
-        return '0;
+        write_int_reg(instr.rd, read_int_reg(instr.rs1) ^ read_int_reg(instr.rs2));
       end  //}}}
 
       XORI: begin  //{{{
-        return '0;
+        write_int_reg(instr.rd, (read_int_reg(instr.rs1) ^ sign_ext(instr.imm, 12)));
       end  //}}}
 
-      default: return '0;
+      default: execution_ok = 0;
 
     endcase
 
-    return 1;
+    if (!execution_ok) begin
+      $display("\033[1;31m\n%m failed to execute 0x%h\n%p\n\033[0m", instr_word, instr);
+    end
 
-  endfunction  //}}}
+    pc = pc + 4;
+
+  endtask  //}}}
 
   //}}}
 
