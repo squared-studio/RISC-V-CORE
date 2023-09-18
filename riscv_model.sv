@@ -786,8 +786,8 @@ class riscv_model #(
   // FSUB_Q     FSUB_S     FSW        LB         LBU        LD
   // LH         LHU        LR_D       LR_W       LW         LWU        MUL
   // MULH       MULHSU     MULHU      MULW       OR         REM        REMU
-  // REMUW      REMW       SB         SC_D       SC_W       SD         SH         SLL
-  // SLLIW      SLLW       SLT        SLTI       SLTIU      SLTU       SRA
+  // REMUW      REMW       SB         SC_D       SC_W       SD         SH
+  // SLT        SLTI       SLTIU      SLTU       SRA
   // SRAI       SRAIW      SRAW       SRL        SRLI       SRLIW      SRLW
   // SW
   task automatic execute(input bit [31:0] instr_word, input bit print = 0);  //{{{
@@ -1359,7 +1359,6 @@ class riscv_model #(
       end  //}}}
 
       JAL: begin  //{{{
-        // TODO CHECK
         write_int_reg(instr.rd, pc + 4);
         pc = pc + sign_ext(instr.imm, 20);
       end  //}}}
@@ -1476,7 +1475,7 @@ class riscv_model #(
       end  //}}}
 
       SLL: begin  //{{{
-        execution_ok = 0;
+        write_int_reg(instr.rd, read_int_reg(instr.rs1) << read_int_reg(instr.rs2));
       end  //}}}
 
       SLLI: begin  //{{{
@@ -1484,11 +1483,11 @@ class riscv_model #(
       end  //}}}
 
       SLLIW: begin  //{{{
-        execution_ok = 0;
+        write_int_reg(instr.rd, sign_ext((read_int_reg(instr.rs1) << instr.shamt), 32));
       end  //}}}
 
       SLLW: begin  //{{{
-        execution_ok = 0;
+        write_int_reg(instr.rd, sign_ext(read_int_reg(instr.rs1) << read_int_reg(instr.rs2), 32));
       end  //}}}
 
       SLT: begin  //{{{

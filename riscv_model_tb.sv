@@ -14,8 +14,8 @@ module riscv_model_tb;
 
   riscv_model model = new();
 
-`define EXE(__HEX__)              \
-  model.execute('h``__HEX__``);   \
+`define EXE(__HEX__)                  \
+  model.execute('h``__HEX__``, 1);    \
 
   initial begin
 
