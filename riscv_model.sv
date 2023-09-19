@@ -242,7 +242,8 @@ class riscv_model #(
   //////////////////////////////////////////////////////////////////////////////////////////////////
 
   local bit [7:0] mem[longint];
-  local bit [XLEN-1:0] pc;
+  local bit [63:0] pc;
+  local bit core_active;
   local bit [XLEN/8-1:0][7:0] int_reg[32];
 
   //}}}
@@ -251,7 +252,36 @@ class riscv_model #(
   //-METHODS{{{
   //////////////////////////////////////////////////////////////////////////////////////////////////
 
-  task automatic int_read_mem(input bit [XLEN-1:0] addr, output bit [XLEN/8-1:0][7:0] data);  //{{{
+  function automatic void load_hex(input string file, input bit print = 0);  //{{{
+    if (SOFT_MEM) begin
+      bit [7:0] localmem[int];
+      mem.delete();
+      localmem.delete();
+      $readmemh(file, localmem);
+      foreach (localmem[i]) mem[i] = localmem[i];
+      if (print) begin
+        bit [3:0][7:0] mem2[longint];
+        mem2.delete();
+        foreach (mem[i]) begin
+          bit [63:0] word_addr;
+          bit [ 1:0] offset;
+          word_addr = i;
+          offset = i;
+          word_addr[0] = 0;
+          word_addr[1] = 0;
+          mem2[word_addr][offset] = mem[i];
+        end
+        $display("\033[0;33mLOADED %s\033[0m", file);
+        foreach (mem2[i]) begin
+          $display("MEM[0x%h]:0x%h", i, mem2[i]);
+        end
+      end
+    end else begin
+      $display("\033[6;31mHARDWARE LOADING NOT ALLOWED FROM CORE\033[0m", file);
+    end
+  endfunction  //}}}
+
+  task automatic read_inst(input bit [63:0] addr, output bit [3:0][7:0] data);  //{{{
     if (SOFT_MEM) begin
       foreach (data[i]) begin
         data[i] = mem[addr+i];
@@ -259,7 +289,15 @@ class riscv_model #(
     end
   endtask  //}}}
 
-  task automatic int_write_mem(input bit [XLEN-1:0] addr, input bit [XLEN/8-1:0][7:0] data,
+  task automatic int_read_mem(input bit [63:0] addr, output bit [XLEN/8-1:0][7:0] data);  //{{{
+    if (SOFT_MEM) begin
+      foreach (data[i]) begin
+        data[i] = mem[addr+i];
+      end
+    end
+  endtask  //}}}
+
+  task automatic int_write_mem(input bit [63:0] addr, input bit [XLEN/8-1:0][7:0] data,
                                input bit [XLEN/8-1:0] strb);  //{{{
     if (SOFT_MEM) begin
       foreach (data[i]) begin
@@ -270,26 +308,27 @@ class riscv_model #(
     end
   endtask  //}}}
 
-  function automatic bit [XLEN-1:0] get_pc();  //{{{
+  function automatic bit [63:0] get_pc();  //{{{
     return pc;
   endfunction  //}}}
 
-  function automatic void set_pc(bit [XLEN-1:0] addr);  //{{{
+  function automatic void set_pc(input bit [63:0] addr);  //{{{
     pc = addr;
   endfunction  //}}}
 
-  function automatic bit signed [XLEN-1:0] sign_ext(bit [XLEN-1:0] data, int len);  //{{{
+  function automatic bit signed [XLEN-1:0] sign_ext(input bit [XLEN-1:0] data,
+                                                    input int len);  //{{{
     sign_ext = data;
     for (int i = len; i < XLEN; i++) begin
       sign_ext[i] = data[len-1];
     end
   endfunction  //}}}
 
-  function automatic bit [XLEN-1:0] read_int_reg(bit [4:0] reg_id);  //{{{
+  function automatic bit [XLEN-1:0] read_int_reg(input bit [4:0] reg_id);  //{{{
     return int_reg[reg_id];
   endfunction  //}}}
 
-  function automatic void write_int_reg(bit [4:0] reg_id, bit [XLEN-1:0] data);  //{{{
+  function automatic void write_int_reg(input bit [4:0] reg_id, input bit [XLEN-1:0] data);  //{{{
     if (reg_id != 0) begin
       int_reg[reg_id] = data;
     end
@@ -307,7 +346,7 @@ class riscv_model #(
     return txt;
   endfunction  //}}}
 
-  function automatic decoded_inst_t decode(bit [31:0] instr);  //{{{
+  function automatic decoded_inst_t decode(input bit [31:0] instr);  //{{{
 
     decode = '0;
 
@@ -813,8 +852,6 @@ class riscv_model #(
     execution_ok = 1;
     instr = decode(instr_word);
 
-    pc = pc + 4;  // TODO MOVES TO FETCH
-
     if (print) $display("0x%h : %p", instr_word, instr);
 
     case (instr.func)
@@ -1007,15 +1044,15 @@ class riscv_model #(
           1: $display("\033[1;36m%0d\033[0m", read_int_reg(10));
 
           4: begin
-            bit [XLEN-1:0] addr;
+            bit [63:0] addr;
             bit [XLEN/8-1:0][7:0] data;
             int data_avl;
             bit keep_going;
             string txt;
 
-            txt  = "";
+            txt = "";
             addr = read_int_reg(10);
-            data_avl   = 0;
+            data_avl = 0;
             keep_going = 1;
             while (keep_going) begin
               if (data_avl == 0) begin
@@ -1034,11 +1071,17 @@ class riscv_model #(
             $display("\033[1;36m%s\033[0m", txt);
           end
 
-          10: $display("\033[1;36mPROGRAM EXIT CODE: 0\033[0m");
+          10: begin
+            $display("\033[1;36mPROGRAM EXIT CODE: 0\033[0m");
+            core_active = 0;
+          end
 
           11: $display("\033[1;36m%s\033[0m", byte'(read_int_reg(10)));
 
-          93: $display("\033[1;36mPROGRAM EXIT CODE: %0d\033[0m", read_int_reg(10));
+          93: begin
+            $display("\033[1;36mPROGRAM EXIT CODE: %0d\033[0m", read_int_reg(10));
+            core_active = 0;
+          end
 
           default: $display("\033[1;36mSERVICE ROUTINE %0d NOT SUPPORTED\033[0m", read_int_reg(17));
 
@@ -1668,6 +1711,21 @@ class riscv_model #(
     end
 
   endtask  //}}}
+
+  task automatic boot(input bit [63:0] addr);
+    pc = addr;
+    core_active = 1;
+    while (core_active) begin
+      bit [31:0] instr;
+      read_inst(pc, instr);
+      if (instr == 0) begin
+        core_active = 0;
+      end else begin
+        pc = pc + 4;
+        execute(instr);
+      end
+    end
+  endtask
 
   //}}}
 
