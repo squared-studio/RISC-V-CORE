@@ -21,7 +21,9 @@ module riscv_model_tb;
 
   initial begin
 
-    model.load_hex("./sub/RISC-V-tests/build/console_print.s/console_print.s.hex");
+    string file;
+    if (!$value$plusargs("HEX_FILE=%s", file)) $fatal(2,"hex file not found");
+    model.load_hex(file);
 
     model.boot(0);
 

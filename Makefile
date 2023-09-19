@@ -1,14 +1,23 @@
+HEX = console_print.s.hex
+HEX_FILE = $(shell find ./prebuilt_hex -name "*$(HEX)*")
+
 .PHONY: vivado
-vivado: clean
+vivado: build simulate
+
+.PHONY: simulate
+simulate:
+	@xsim top -runall -testplusarg \"HEX_FILE=$(HEX_FILE)\"
+
+.PHONY: build
+build: clean
 	@xvlog -sv riscv_model.sv riscv_model_tb.sv
 	@xelab riscv_model_tb -s top
-	@xsim top -runall
 
 .PHONY: clean
 clean:
 	@rm -rf *.log *.pb *.jou xsim.dir
 
-.PHONY: update_hex_list
+.PHONY: update_hex_listW
 update_hex_list:
 	@rm -rf prebuilt_hex
 	@git submodule deinit ./sub/RISC-V-TESTS
