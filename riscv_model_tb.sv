@@ -21,9 +21,12 @@ module riscv_model_tb;
 
   initial begin
 
-    model.load_hex("./sub/RISC-V-tests/build/li.s/li.s.hex");
+    model.load_hex("./sub/RISC-V-tests/build/console_print.s/console_print.s.hex");
 
     model.boot(0);
+
+    //model.set_pc(0);
+    //repeat (160) model.step(0);
 
     $display("%s", model.int_reg_to_string());
 

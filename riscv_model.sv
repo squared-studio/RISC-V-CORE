@@ -908,7 +908,7 @@ class riscv_model #(
         execution_ok = 0;
       end  //}}}
 
-      AMOMIN_W: begin  //{{{
+      AMOMIN_W: begin  //{{{<<
         execution_ok = 0;
       end  //}}}
 
@@ -953,42 +953,42 @@ class riscv_model #(
       end  //}}}
 
       AUIPC: begin  //{{{
-        write_int_reg(instr.rd, (pc + sign_ext(instr.imm, 20) << 12));
+        write_int_reg(instr.rd, pc + (sign_ext(instr.imm, 20) << 12) - 4);
       end  //}}}
 
       BEQ: begin  //{{{
         if (read_int_reg(instr.rs1) == read_int_reg(instr.rs2)) begin
-          pc = pc + sign_ext(instr.imm, 12);
+          pc = pc + sign_ext(instr.imm, 12) - 4;
         end
       end  //}}}
 
       BGE: begin  //{{{
         if (signed'(read_int_reg(instr.rs1)) >= signed'(read_int_reg(instr.rs2))) begin
-          pc = pc + sign_ext(instr.imm, 12);
+          pc = pc + sign_ext(instr.imm, 12) - 4;
         end
       end  //}}}
 
       BGEU: begin  //{{{
         if (read_int_reg(instr.rs1) >= read_int_reg(instr.rs2)) begin
-          pc = pc + sign_ext(instr.imm, 12);
+          pc = pc + sign_ext(instr.imm, 12) - 4;
         end
       end  //}}}
 
       BLT: begin  //{{{
         if (signed'(read_int_reg(instr.rs1)) < signed'(read_int_reg(instr.rs2))) begin
-          pc = pc + sign_ext(instr.imm, 12);
+          pc = pc + sign_ext(instr.imm, 12) - 4;
         end
       end  //}}}
 
       BLTU: begin  //{{{
         if (read_int_reg(instr.rs1) < read_int_reg(instr.rs2)) begin
-          pc = pc + sign_ext(instr.imm, 12);
+          pc = pc + sign_ext(instr.imm, 12 - 4);
         end
       end  //}}}
 
       BNE: begin  //{{{
         if (read_int_reg(instr.rs1) != read_int_reg(instr.rs2)) begin
-          pc = pc + sign_ext(instr.imm, 12);
+          pc = pc + sign_ext(instr.imm, 12 - 4);
         end
       end  //}}}
 
@@ -1041,7 +1041,7 @@ class riscv_model #(
             17
         ))
 
-          1: $display("\033[1;36m%0d\033[0m", read_int_reg(10));
+          1: $write("\033[1;36m%0d\033[0m", signed'(read_int_reg(10)));
 
           4: begin
             bit [63:0] addr;
@@ -1049,7 +1049,6 @@ class riscv_model #(
             int data_avl;
             bit keep_going;
             string txt;
-
             txt = "";
             addr = read_int_reg(10);
             data_avl = 0;
@@ -1057,6 +1056,7 @@ class riscv_model #(
             while (keep_going) begin
               if (data_avl == 0) begin
                 int_read_mem(addr, data);
+                addr = addr + 8;
                 data_avl = 8;
               end
 
@@ -1068,22 +1068,23 @@ class riscv_model #(
                 data_avl--;
               end
             end
-            $display("\033[1;36m%s\033[0m", txt);
+            $write("\033[1;36m%s\033[0m", txt);
           end
 
           10: begin
-            $display("\033[1;36mPROGRAM EXIT CODE: 0\033[0m");
+            $display("\033[1;36m\nPROGRAM EXIT CODE: 0\033[0m");
             core_active = 0;
           end
 
-          11: $display("\033[1;36m%s\033[0m", byte'(read_int_reg(10)));
+          11: $write("\033[1;36m%s\033[0m", byte'(read_int_reg(10)));
 
           93: begin
-            $display("\033[1;36mPROGRAM EXIT CODE: %0d\033[0m", read_int_reg(10));
+            $display("\033[1;36m\nPROGRAM EXIT CODE: %0d\033[0m", read_int_reg(10));
             core_active = 0;
           end
 
-          default: $display("\033[1;36mSERVICE ROUTINE %0d NOT SUPPORTED\033[0m", read_int_reg(17));
+          default:
+          $display("\033[1;36m\nSERVICE ROUTINE %0d NOT SUPPORTED\033[0m", read_int_reg(17));
 
         endcase
       end  //}}}
@@ -1473,12 +1474,12 @@ class riscv_model #(
       end  //}}}
 
       JAL: begin  //{{{
-        write_int_reg(instr.rd, pc + 4);
-        pc = pc + sign_ext(instr.imm, 20);
+        write_int_reg(instr.rd, pc);
+        pc = pc + sign_ext(instr.imm, 20) - 4;
       end  //}}}
 
       JALR: begin  //{{{
-        write_int_reg(instr.rd, pc + 4);
+        write_int_reg(instr.rd, pc);
         pc = read_int_reg(instr.rs1) + sign_ext(instr.imm, 12);
         pc = pc >> 1;
         pc = pc << 1;
@@ -1712,20 +1713,28 @@ class riscv_model #(
 
   endtask  //}}}
 
-  task automatic boot(input bit [63:0] addr);
+  task automatic step(input bit print = 0);  //{{{
+    bit [31:0] instr;
+    read_inst(pc, instr);
+    if (instr == 0) begin
+      core_active = 0;
+      $display("\033[0;33mPC:0x%h INVALID INSTRUCTION 0x%h\033[0m", pc, instr);
+    end else begin
+      if (print) begin
+        $display("PC:0x%h: 0x%h", pc, instr);
+      end
+      pc = pc + 4;
+      execute(instr, print);
+    end
+  endtask  //}}}
+
+  task automatic boot(input bit [63:0] addr, input bit print = 0);  //{{{
     pc = addr;
     core_active = 1;
     while (core_active) begin
-      bit [31:0] instr;
-      read_inst(pc, instr);
-      if (instr == 0) begin
-        core_active = 0;
-      end else begin
-        pc = pc + 4;
-        execute(instr);
-      end
+      step();
     end
-  endtask
+  endtask  //}}}
 
   //}}}
 
