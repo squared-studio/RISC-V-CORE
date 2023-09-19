@@ -1068,22 +1068,24 @@ class riscv_model #(
                 data_avl--;
               end
             end
-            $display("\033[1;36m%s\033[0m", txt);
+            $write("\033[1;36m%s\033[0m", txt);
           end
 
           10: begin
-            $display("\033[1;36mPROGRAM EXIT CODE: 0\033[0m");
+            $write("\033[1;33m\nPROGRAM EXIT CODE: 0\n\033[0m");
             core_active = 0;
           end
 
-          11: $display("\033[1;36m%s\033[0m", byte'(read_int_reg(10)));
+          11: $write("\033[1;36m%s\033[0m", byte'(read_int_reg(10)));
 
           93: begin
-            $display("\033[1;36mPROGRAM EXIT CODE: %0d\033[0m", read_int_reg(10));
+            $write("\033[1;33m\nPROGRAM EXIT CODE: %0d\n\033[0m", read_int_reg(10));
             core_active = 0;
           end
 
-          default: $display("\033[1;36mSERVICE ROUTINE %0d NOT SUPPORTED\033[0m", read_int_reg(17));
+          default: begin
+            $write("\033[1;33mSERVICE ROUTINE %0d NOT SUPPORTED\033[0m", read_int_reg(17));
+          end
 
         endcase
       end  //}}}
