@@ -842,7 +842,7 @@ class riscv_model #(
   // FSGNJX_D   FSGNJX_Q   FSGNJX_S   FSQ        FSQRT_D    FSQRT_Q    FSQRT_S    FSUB_D
   // FSUB_Q     FSUB_S     FSW        LR_D       LR_W       MUL
   // MULH       MULHSU     MULHU      MULW       REM        REMU
-  // REMUW      REMW       SC_D       SC_W       SRAIW      SRAW       SRLIW      SRLW
+  // REMUW      REMW       SC_D       SC_W
   // ------------------------------------------TODO------------------------------------------
   task automatic execute(input bit [31:0] instr_word, input bit print = 0);  //{{{
 
@@ -1660,11 +1660,11 @@ class riscv_model #(
       end  //}}}
 
       SRAIW: begin  //{{{
-        execution_ok = 0;
+        write_int_reg(instr.rd, sign_ext(read_int_reg(instr.rs1) >> instr.shamt, 31));
       end  //}}}
 
       SRAW: begin  //{{{
-        execution_ok = 0;
+        write_int_reg(instr.rd, sign_ext(read_int_reg(instr.rs1) >> read_int_reg(instr.rs2), 31));
       end  //}}}
 
       SRL: begin  //{{{
@@ -1676,11 +1676,11 @@ class riscv_model #(
       end  //}}}
 
       SRLIW: begin  //{{{
-        execution_ok = 0;
+        write_int_reg(instr.rd, read_int_reg(instr.rs1) >> instr.shamt);
       end  //}}}
 
       SRLW: begin  //{{{
-        execution_ok = 0;
+        write_int_reg(instr.rd, read_int_reg(instr.rs1) >> read_int_reg(instr.rs2));
       end  //}}}
 
       SUB: begin  //{{{
