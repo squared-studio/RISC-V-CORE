@@ -2,3 +2,4 @@
 *.pb
 *.jou
 xsim.dir
+temp/*
