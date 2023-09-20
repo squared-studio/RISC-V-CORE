@@ -20,7 +20,7 @@ build: clean
 clean:
 	@rm -rf *.log *.pb *.jou xsim.dir
 
-.PHONY: update_hex_listW
+.PHONY: update_hex_list
 update_hex_list: temp_setup gen_hex collect_hex temp_remove
 
 .PHONY: temp_setup
