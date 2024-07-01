@@ -248,7 +248,7 @@ module instruction_decoder
     decoder_F           = '0;
     decoder_F.rs1       = code_i[19:15];
     decoder_F.rs2       = code_i[24:20];
-    decoder_F.rs3       = code_i[31:29];
+    decoder_F.rs3       = code_i[31:27];
     decoder_F.rm        = rm_t'(code_i[14:12]);
     decoder_F.rd        = code_i[11:7];
     decoder_F.imm[11:0] = code_i[31:20];
@@ -296,27 +296,27 @@ module instruction_decoder
           end
           7'b1110000:
           begin
-            deocoder_F.rs2 = 5'b00000;
+            decoder_F.rs2 = 5'b00000;
             case(code_i[14:12])
               3'b000:  decoder_F.funct  = FMV_X_W;
               3'b001:  decoder_F.funct  = FCLASS_S;
-              default: decoder_F.fucnt  = INVALID;
+              default: decoder_F.funct  = INVALID;
             endcase
           end
           7'b1010000:
           begin
             case(code_i[14:12])
-              3'b000:  decoder_F.fucnt   = FLE_S;
-              3'b001:  decoder_F.fucnt   = FLT_S;
-              3'b010:  decoder_F.fucnt   = FEQ_S;
-              default: decoder_f.funct   = INVALID;
+              3'b000:  decoder_F.funct   = FLE_S;
+              3'b001:  decoder_F.funct   = FLT_S;
+              3'b010:  decoder_F.funct   = FEQ_S;
+              default: decoder_F.funct   = INVALID;
             endcase
           end
           7'b1101000:
           begin
             case(code_i[24:20])
-              5'b00000: decoder_F.fucnt = FCVT_S_W;
-              5'b00001: decoder_F.fucnt = FCVT_S_WU;
+              5'b00000: decoder_F.funct = FCVT_S_W;
+              5'b00001: decoder_F.funct = FCVT_S_WU;
               default:  decoder_F.funct = INVALID;
             endcase
           end
@@ -324,12 +324,12 @@ module instruction_decoder
           begin
             decoder_F.funct = FMV_W_X;
             decoder_F.rs2   = 5'b00000;
-            decoder_F.rm    = 3'b000;
+            decoder_F.rm    = rm_t'(3'b000);
           end
           default: decoder_F.funct = INVALID;
         endcase
       end
-      default: decoder_F.fucnt = INVALID;
+      default: decoder_F.funct = INVALID;
     endcase
     if (decoder_F.funct == INVALID) decoder_F = '0;
   end

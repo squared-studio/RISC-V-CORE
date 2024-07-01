@@ -220,6 +220,7 @@ package rv64g_pkg;
     logic [4:0]  rd;
     logic [4:0]  rs1;
     logic [4:0]  rs2;
+    logic [4:0]  rs3;
     logic [31:0] imm;
     logic [11:0] csr;
     rm_t         rm;
