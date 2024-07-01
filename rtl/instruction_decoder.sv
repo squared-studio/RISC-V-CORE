@@ -245,8 +245,92 @@ module instruction_decoder
   end
 
   always_comb begin  // decoder_F
-    decoder_F = '0;
-    // TODO Reyad vai
+    decoder_F           = '0;
+    decoder_F.rs1       = code_i[19:15];
+    decoder_F.rs2       = code_i[24:20];
+    decoder_F.rs3       = code_i[31:29];
+    decoder_F.rm        = rm_t'(code_i[14:12]);
+    decoder_F.rd        = code_i[11:7];
+    decoder_F.imm[11:0] = code_i[31:20];
+    decoder_F.imm[4:0]  = code_i[11:7];
+    decoder_F.imm[11:5] = code_i[31:25];
+    case (code_i[6:0])
+      7'b0000111: decoder_F.funct = FLW;
+      7'b0100111: decoder_F.funct = FSW;
+      7'b1000011: decoder_F.funct = FMADD_S;
+      7'b1000111: decoder_F.funct = FMSUB_S;
+      7'b1001011: decoder_F.funct = FNMSUB_S;
+      7'b1001111: decoder_F.funct = FNMADD_S;
+      7'b1010011:
+      begin
+        case(code_i[31:25])
+          7'b0000000: decoder_F.funct = FADD_S;
+          7'b0000100: decoder_F.funct = FSUB_S;
+          7'b0001000: decoder_F.funct = FMUL_S;
+          7'b0011000: decoder_F.funct = FDIV_S;
+          7'b0101100: decoder_F.funct = FSQRT_S;
+          7'b0010000:
+          begin
+            case (code_i[14:12])
+              3'b000: decoder_F.funct   = FSGNJ_S;
+              3'b001: decoder_F.funct   = FSGNJN_S;
+              3'b010: decoder_F.funct   = FSGNJX_S;
+              default: decoder_F.funct  = INVALID;
+            endcase
+          end
+          7'b0010100:
+          begin
+            case(code_i[14:12])
+              3'b000: decoder_F.funct   = FMIN_S;
+              3'b001: decoder_F.funct   = FMAX_S;
+              default: decoder_F.funct  = INVALID;
+            endcase
+          end
+          7'b1100000:
+          begin
+            case(code_i[24:20])
+              5'b00000: decoder_F.funct = FCVT_W_S;
+              5'b00001: decoder_F.funct = FCVT_WU_S;
+              default: decoder_F.funct  = INVALID;
+            endcase
+          end
+          7'b1110000:
+          begin
+            deocoder_F.rs2 = 5'b00000;
+            case(code_i[14:12])
+              3'b000: decoder_F.funct  = FMV_X_W;
+              3'b001: decoder_F.funct  = FCLASS_S;
+              default: decoder_F.fucnt = INVALID;
+            endcase
+          end
+          7'b1010000:
+          begin
+            case(code_i[14:12])
+              3'b000: decoder_F.fucnt   = FLE_S;
+              3'b001: decoder_F.fucnt   = FLT_S;
+              3'b010: decoder_F.fucnt   = FEQ_S;
+              default: decoder_f.funct  = INVALID;
+            endcase
+          end
+          7'b1101000:
+          begin
+            case(code_i[24:20])
+              5'b00000: decoder_F.fucnt = FCVT_S_W;
+              5'b00001: decoder_F.fucnt = FCVT_S_WU;
+              default: decoder_F.funct  = INVALID;
+            endcase
+          end
+          7'b1111000:
+          begin
+            decoder_F.funct = FMV_W_X;
+            decoder_F.rs2   = 5'b00000;
+            decoder_F.rm    = 3'b000;
+          end
+          default: decoder_F.funct = INVALID;
+        endcase
+      end
+      default: decoder_F.fucnt = INVALID;
+    endcase
     if (decoder_F.funct == INVALID) decoder_F = '0;
   end
 
