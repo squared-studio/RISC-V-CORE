@@ -272,17 +272,17 @@ module instruction_decoder
           7'b0010000:
           begin
             case (code_i[14:12])
-              3'b000:  decoder_F.funct   = FSGNJ_S;
-              3'b001:  decoder_F.funct   = FSGNJN_S;
-              3'b010:  decoder_F.funct   = FSGNJX_S;
+              3'b000:  decoder_F.funct  = FSGNJ_S;
+              3'b001:  decoder_F.funct  = FSGNJN_S;
+              3'b010:  decoder_F.funct  = FSGNJX_S;
               default: decoder_F.funct  = INVALID;
             endcase
           end
           7'b0010100:
           begin
             case(code_i[14:12])
-              3'b000:  decoder_F.funct   = FMIN_S;
-              3'b001:  decoder_F.funct   = FMAX_S;
+              3'b000:  decoder_F.funct  = FMIN_S;
+              3'b001:  decoder_F.funct  = FMAX_S;
               default: decoder_F.funct  = INVALID;
             endcase
           end
@@ -300,7 +300,7 @@ module instruction_decoder
             case(code_i[14:12])
               3'b000:  decoder_F.funct  = FMV_X_W;
               3'b001:  decoder_F.funct  = FCLASS_S;
-              default: decoder_F.fucnt = INVALID;
+              default: decoder_F.fucnt  = INVALID;
             endcase
           end
           7'b1010000:
@@ -309,7 +309,7 @@ module instruction_decoder
               3'b000:  decoder_F.fucnt   = FLE_S;
               3'b001:  decoder_F.fucnt   = FLT_S;
               3'b010:  decoder_F.fucnt   = FEQ_S;
-              default: decoder_f.funct  = INVALID;
+              default: decoder_f.funct   = INVALID;
             endcase
           end
           7'b1101000:
@@ -317,7 +317,7 @@ module instruction_decoder
             case(code_i[24:20])
               5'b00000: decoder_F.fucnt = FCVT_S_W;
               5'b00001: decoder_F.fucnt = FCVT_S_WU;
-              default:  decoder_F.funct  = INVALID;
+              default:  decoder_F.funct = INVALID;
             endcase
           end
           7'b1111000:
